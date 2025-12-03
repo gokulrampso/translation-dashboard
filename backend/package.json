@@ -1,0 +1,23 @@
+{
+  "name": "translation-manager-backend",
+  "version": "1.0.0",
+  "description": "Backend for Translation Management System",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.450.0",
+    "@aws-sdk/client-translate": "^3.450.0",
+    "@aws-sdk/lib-dynamodb": "^3.450.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
