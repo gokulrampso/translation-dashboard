@@ -24,7 +24,6 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'fi', name: 'Finnish' },
   { code: 'zh', name: 'Chinese' },
   { code: 'pl', name: 'Polish' },
-  { code: 'ta', name: 'Tamil' },
 ];
 
 /**
