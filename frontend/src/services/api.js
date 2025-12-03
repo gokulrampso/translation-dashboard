@@ -118,5 +118,20 @@ export const cacheApi = {
   },
 };
 
+// Usage/Cost API endpoints
+export const usageApi = {
+  // Get usage statistics
+  getUsageStats: async () => {
+    const response = await api.get('/usage');
+    return response.data;
+  },
+
+  // Reset usage statistics
+  resetUsageStats: async () => {
+    const response = await api.post('/usage/reset');
+    return response.data;
+  },
+};
+
 export default api;
 

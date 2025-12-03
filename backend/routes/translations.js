@@ -234,5 +234,29 @@ router.get('/cache/status', asyncHandler(async (req, res) => {
   return apiResponse.success(res, status, 'Cache status retrieved');
 }));
 
+// ============================================
+// USAGE/COST ENDPOINTS
+// ============================================
+
+import { getUsageStats, resetUsageStats } from '../services/usageTracker.js';
+
+/**
+ * GET /usage
+ * Get usage statistics for cost estimation
+ */
+router.get('/usage', asyncHandler(async (req, res) => {
+  const stats = getUsageStats();
+  return apiResponse.success(res, stats, 'Usage statistics retrieved');
+}));
+
+/**
+ * POST /usage/reset
+ * Reset usage statistics
+ */
+router.post('/usage/reset', asyncHandler(async (req, res) => {
+  resetUsageStats();
+  return apiResponse.success(res, { reset: true }, 'Usage statistics reset');
+}));
+
 export default router;
 

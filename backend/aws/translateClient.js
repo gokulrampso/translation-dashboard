@@ -1,5 +1,6 @@
 import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
 import { awsConfig } from './config.js';
+import { trackTranslateCharacters } from '../services/usageTracker.js';
 
 // Create Translate client
 const translateClient = new TranslateClient(awsConfig);
@@ -47,6 +48,10 @@ export async function translateText(text, sourceLang, targetLang) {
     });
 
     const response = await translateClient.send(command);
+    
+    // Track character usage
+    trackTranslateCharacters(text.length);
+    
     return response.TranslatedText;
   } catch (error) {
     console.error(`Error translating text to ${targetLang}:`, error);

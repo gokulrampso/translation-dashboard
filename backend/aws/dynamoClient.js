@@ -8,6 +8,13 @@ import {
   DeleteCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { awsConfig, DYNAMODB_TABLE_NAME } from './config.js';
+import {
+  trackDynamoRead,
+  trackDynamoWrite,
+  trackDynamoDelete,
+  trackDynamoScan,
+  updateStorageSize,
+} from '../services/usageTracker.js';
 
 // Create DynamoDB client
 const client = new DynamoDBClient(awsConfig);
@@ -32,6 +39,7 @@ export async function getTranslation(lang) {
     });
 
     const response = await docClient.send(command);
+    trackDynamoRead(1);
     return response.Item?.content || null;
   } catch (error) {
     console.error(`Error getting translation for ${lang}:`, error);
@@ -56,6 +64,12 @@ export async function saveTranslation(lang, content) {
     });
 
     await docClient.send(command);
+    trackDynamoWrite(1);
+    
+    // Estimate storage size
+    const itemSize = JSON.stringify({ lang, content }).length;
+    updateStorageSize(itemSize);
+    
     console.log(`Translation saved for ${lang}`);
   } catch (error) {
     console.error(`Error saving translation for ${lang}:`, error);
@@ -86,6 +100,7 @@ export async function updateTranslationKey(lang, key, value) {
     });
 
     const response = await docClient.send(command);
+    trackDynamoWrite(1);
     return response.Attributes?.content || null;
   } catch (error) {
     console.error(`Error updating key ${key} for ${lang}:`, error);
@@ -104,7 +119,14 @@ export async function getAllTranslations() {
     });
 
     const response = await docClient.send(command);
-    return response.Items || [];
+    const items = response.Items || [];
+    trackDynamoScan(items.length);
+    
+    // Estimate total storage size
+    const totalSize = items.reduce((acc, item) => acc + JSON.stringify(item).length, 0);
+    updateStorageSize(totalSize);
+    
+    return items;
   } catch (error) {
     console.error('Error scanning translations:', error);
     throw error;
@@ -125,6 +147,7 @@ export async function languageExists(lang) {
     });
 
     const response = await docClient.send(command);
+    trackDynamoRead(1);
     return !!response.Item;
   } catch (error) {
     console.error(`Error checking language ${lang}:`, error);
@@ -144,6 +167,7 @@ export async function deleteLanguage(lang) {
     });
 
     await docClient.send(command);
+    trackDynamoDelete(1);
     console.log(`Language deleted from DynamoDB: ${lang}`);
   } catch (error) {
     console.error(`Error deleting language ${lang} from DynamoDB:`, error);
@@ -163,6 +187,7 @@ export async function getKeyOrder() {
     });
 
     const response = await docClient.send(command);
+    trackDynamoRead(1);
     return response.Item?.order || [];
   } catch (error) {
     console.error('Error getting key order:', error);
@@ -186,6 +211,7 @@ export async function saveKeyOrder(order) {
     });
 
     await docClient.send(command);
+    trackDynamoWrite(1);
     console.log('Key order saved to DynamoDB');
   } catch (error) {
     console.error('Error saving key order:', error);
