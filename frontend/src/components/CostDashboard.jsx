@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usageApi } from '../services/api';
 import { LoadingSpinner } from './LoadingSpinner';
+import { ConfirmModal } from './ConfirmModal';
 
 function StatCard({ icon, title, value, subtitle, color = 'primary' }) {
   const colorClasses = {
@@ -67,6 +68,7 @@ export function CostDashboard({ onBack }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -88,13 +90,16 @@ export function CostDashboard({ onBack }) {
     return () => clearInterval(interval);
   }, [fetchStats]);
 
-  const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset all usage statistics?')) return;
-    
+  const handleResetClick = () => {
+    setShowResetConfirm(true);
+  };
+
+  const handleResetConfirm = async () => {
     try {
       setIsResetting(true);
       await usageApi.resetUsageStats();
       await fetchStats();
+      setShowResetConfirm(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -161,17 +166,13 @@ export function CostDashboard({ onBack }) {
                 <span>Refresh</span>
               </button>
               <button
-                onClick={handleReset}
+                onClick={handleResetClick}
                 disabled={isResetting}
                 className="glass-button flex items-center gap-2 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400 disabled:opacity-50"
               >
-                {isResetting ? (
-                  <LoadingSpinner size="sm" />
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                )}
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 <span>Reset Stats</span>
               </button>
             </div>
@@ -299,6 +300,19 @@ export function CostDashboard({ onBack }) {
           <p>Translation Manager • Cost Dashboard</p>
         </footer>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={handleResetConfirm}
+        title="Reset Statistics"
+        message="Are you sure you want to reset all usage statistics? This action cannot be undone."
+        confirmText="Yes, Reset"
+        cancelText="No, Cancel"
+        isLoading={isResetting}
+        variant="danger"
+      />
     </div>
   );
 }
