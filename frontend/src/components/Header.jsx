@@ -60,8 +60,11 @@ export function Header({
   onRetranslateAll,
   onAddKey,
   onDeleteLanguage,
+  onUpload,
+  onDownload,
   isRetranslatingAll,
   isEnglish,
+  isDownloading,
 }) {
   return (
     <header className="glass-card mb-8 p-6">
@@ -142,9 +145,47 @@ export function Header({
             </div>
           </div>
 
+          {/* Upload Button - English only */}
+          {isEnglish && (
+            <button onClick={onUpload} className="glass-button-primary flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+              <span>Upload JSON</span>
+            </button>
+          )}
+
+          {/* Download Button - Non-English only */}
+          {!isEnglish && (
+            <button
+              onClick={onDownload}
+              disabled={isDownloading}
+              className="glass-button flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isDownloading ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+              )}
+              <span>Download</span>
+            </button>
+          )}
+
           {/* Add Key Button - English only */}
           {isEnglish && (
-            <button onClick={onAddKey} className="glass-button-primary flex items-center gap-2">
+            <button onClick={onAddKey} className="glass-button flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"

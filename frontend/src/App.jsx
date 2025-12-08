@@ -10,8 +10,10 @@ import {
   CacheStatus,
   CostDashboard,
   FullPageLoader,
+  UploadModal,
   toastConfig,
 } from './components';
+import { translationApi } from './services/api';
 
 // Language name mapping
 const LANGUAGE_NAMES = {
@@ -70,9 +72,12 @@ function App() {
   // Modal states
   const [isNewLanguageModalOpen, setIsNewLanguageModalOpen] = useState(false);
   const [isAddKeyModalOpen, setIsAddKeyModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [deleteKeyConfirm, setDeleteKeyConfirm] = useState({ isOpen: false, key: null });
   const [deleteLanguageConfirm, setDeleteLanguageConfirm] = useState({ isOpen: false, lang: null });
   const [isDeletingKey, setIsDeletingKey] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Use translations hook
   const {
@@ -199,6 +204,71 @@ function App() {
     [addKey]
   );
 
+  // Upload handler
+  const handleUpload = useCallback(
+    async (jsonContent, overwrite) => {
+      try {
+        setIsUploading(true);
+        const response = await translationApi.uploadEnglish(jsonContent, overwrite);
+        const result = response.data || response;
+
+        // Show success message
+        const addedCount = result.added?.length || 0;
+        const updatedCount = result.updated?.length || 0;
+        const skippedCount = result.skipped?.length || 0;
+
+        let message = '';
+        if (addedCount > 0) message += `${addedCount} keys added`;
+        if (updatedCount > 0) message += `${message ? ', ' : ''}${updatedCount} keys updated`;
+        if (skippedCount > 0) message += `${message ? ', ' : ''}${skippedCount} keys skipped`;
+
+        if (message) {
+          toast.success(message);
+        } else {
+          toast.success('Upload complete');
+        }
+
+        // Refresh translations
+        await refreshCache();
+
+        return true;
+      } catch (err) {
+        toast.error(err.message || 'Failed to upload translations');
+        return false;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [refreshCache]
+  );
+
+  // Download handler
+  const handleDownload = useCallback(async () => {
+    try {
+      setIsDownloading(true);
+      const response = await translationApi.downloadTranslations(selectedLanguage);
+      const data = response.data || response;
+      const translations = data.translations || data;
+
+      // Create and download file
+      const blob = new Blob([JSON.stringify(translations, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `translations_${selectedLanguage}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Downloaded ${getLanguageName(selectedLanguage)} translations`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to download translations');
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [selectedLanguage, getLanguageName]);
+
   // Remove key handlers
   const handleRemoveKeyRequest = useCallback((key) => {
     setDeleteKeyConfirm({ isOpen: true, key });
@@ -307,8 +377,11 @@ function App() {
           onRetranslateAll={handleRetranslateAll}
           onAddKey={() => setIsAddKeyModalOpen(true)}
           onDeleteLanguage={handleDeleteLanguageRequest}
+          onUpload={() => setIsUploadModalOpen(true)}
+          onDownload={handleDownload}
           isRetranslatingAll={isRetranslatingAll}
           isEnglish={isEnglish}
+          isDownloading={isDownloading}
         />
 
         {/* Stats Bar */}
@@ -484,6 +557,14 @@ function App() {
         isAdding={isAddingKey}
       />
 
+      {/* Upload Modal */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={handleUpload}
+        isUploading={isUploading}
+      />
+
       {/* Delete Key Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteKeyConfirm.isOpen}
@@ -533,7 +614,7 @@ function App() {
       />
 
       {/* Full page loader for long operations */}
-      {(isCreatingLanguage || isRetranslatingAll || isAddingKey || isDeletingLanguage) && (
+      {(isCreatingLanguage || isRetranslatingAll || isAddingKey || isDeletingLanguage || isUploading) && (
         <FullPageLoader
           message={
             isCreatingLanguage
@@ -542,7 +623,9 @@ function App() {
                 ? 'Adding key to all languages...'
                 : isDeletingLanguage
                   ? 'Deleting language...'
-                  : 'Re-translating all keys...'
+                  : isUploading
+                    ? 'Uploading and translating...'
+                    : 'Re-translating all keys...'
           }
         />
       )}

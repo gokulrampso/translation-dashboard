@@ -15,6 +15,8 @@ import {
   getCacheStatus,
   getKeyOrder,
   updateKeyOrder,
+  bulkUploadEnglish,
+  downloadTranslations,
 } from '../services/translationService.js';
 import { asyncHandler, apiResponse } from '../utils/asyncHandler.js';
 
@@ -210,6 +212,43 @@ router.post('/translations/new', asyncHandler(async (req, res) => {
     : `Language ${targetLang} already exists`;
 
   return apiResponse.success(res, result, message);
+}));
+
+/**
+ * POST /translations/upload
+ * Bulk upload English translations (JSON key-value pairs)
+ */
+router.post('/translations/upload', asyncHandler(async (req, res) => {
+  const { translations, overwrite = false } = req.body;
+
+  if (!translations || typeof translations !== 'object') {
+    return apiResponse.error(res, 'Translations object is required', 400);
+  }
+
+  if (Object.keys(translations).length === 0) {
+    return apiResponse.error(res, 'Translations object cannot be empty', 400);
+  }
+
+  const result = await bulkUploadEnglish(translations, overwrite);
+  return apiResponse.success(res, result, `Upload complete: ${result.added.length} added, ${result.updated.length} updated`);
+}));
+
+/**
+ * GET /translations/:lang/download
+ * Download translations for a language as JSON (from cache/DynamoDB)
+ */
+router.get('/translations/:lang/download', asyncHandler(async (req, res) => {
+  const { lang } = req.params;
+
+  try {
+    const translations = downloadTranslations(lang);
+    return apiResponse.success(res, { translations, language: lang }, `Translations for ${lang} ready for download`);
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return apiResponse.error(res, error.message, 404);
+    }
+    throw error;
+  }
 }));
 
 // ============================================

@@ -471,3 +471,158 @@ export function getCacheStatus() {
   return getCacheStatusFromCache();
 }
 
+/**
+ * Bulk upload English translations (merge with existing)
+ * @param {Object} newTranslations - Key-value pairs to upload
+ * @param {boolean} overwrite - Whether to overwrite existing keys
+ */
+export async function bulkUploadEnglish(newTranslations, overwrite = false) {
+  try {
+    if (!newTranslations || typeof newTranslations !== 'object') {
+      throw new Error('Invalid translations format');
+    }
+
+    // Get existing English translations
+    const existingContent = getLanguageTranslations(BASE_LANGUAGE) || {};
+    const languages = getLanguages();
+
+    // Track what was added/updated
+    const added = [];
+    const updated = [];
+    const skipped = [];
+
+    // Process each key
+    for (const [key, value] of Object.entries(newTranslations)) {
+      if (typeof value !== 'string') {
+        console.warn(`Skipping key "${key}" - value is not a string`);
+        skipped.push(key);
+        continue;
+      }
+
+      // Validate key format
+      const keyRegex = /^[a-zA-Z0-9_.]+$/;
+      if (!keyRegex.test(key)) {
+        console.warn(`Skipping key "${key}" - invalid format`);
+        skipped.push(key);
+        continue;
+      }
+
+      const keyExists = existingContent[key] !== undefined;
+
+      if (keyExists && !overwrite) {
+        skipped.push(key);
+        continue;
+      }
+
+      if (keyExists) {
+        updated.push(key);
+      } else {
+        added.push(key);
+      }
+    }
+
+    // Keys to process (either new or to be updated)
+    const keysToProcess = [...added, ...updated];
+
+    if (keysToProcess.length === 0) {
+      return { added: [], updated: [], skipped, translatedLanguages: [] };
+    }
+
+    // Build merged English content
+    const mergedEnglishContent = { ...existingContent };
+    for (const key of keysToProcess) {
+      mergedEnglishContent[key] = newTranslations[key];
+    }
+
+    // Save English translations
+    await saveTranslation(BASE_LANGUAGE, mergedEnglishContent);
+    updateLanguageCache(BASE_LANGUAGE, mergedEnglishContent);
+
+    // Update key order for new keys
+    const currentKeyOrder = getKeyOrderFromCache();
+    const newKeyOrder = [...currentKeyOrder];
+    for (const key of added) {
+      if (!newKeyOrder.includes(key)) {
+        newKeyOrder.push(key);
+      }
+    }
+    setKeyOrderInCache(newKeyOrder);
+    await saveKeyOrderToDb(newKeyOrder);
+
+    // Translate new/updated keys to all other languages
+    const translatedLanguages = [];
+    for (const lang of languages) {
+      if (lang !== BASE_LANGUAGE) {
+        try {
+          const langContent = getLanguageTranslations(lang) || {};
+          const updatedLangContent = { ...langContent };
+
+          // Translate each key that needs processing
+          for (const key of keysToProcess) {
+            const translatedValue = await translateText(
+              newTranslations[key],
+              BASE_LANGUAGE,
+              lang
+            );
+            updatedLangContent[key] = translatedValue;
+          }
+
+          await saveTranslation(lang, updatedLangContent);
+          updateLanguageCache(lang, updatedLangContent);
+          translatedLanguages.push(lang);
+        } catch (err) {
+          console.error(`Failed to translate to ${lang}:`, err);
+        }
+      }
+    }
+
+    // Mark DB as modified
+    markDbModified();
+    markCacheSynced();
+
+    console.log(`Bulk upload complete: ${added.length} added, ${updated.length} updated, ${skipped.length} skipped`);
+
+    return {
+      added,
+      updated,
+      skipped,
+      translatedLanguages,
+    };
+  } catch (error) {
+    console.error('Error in bulk upload:', error);
+    throw error;
+  }
+}
+
+/**
+ * Download translations for a language (from cache or DynamoDB)
+ * Returns the current state including any manual edits
+ * @param {string} lang - Language code
+ */
+export function downloadTranslations(lang) {
+  const translations = getLanguageTranslations(lang);
+  if (!translations) {
+    throw new Error(`Language "${lang}" not found`);
+  }
+
+  // Return translations in key order
+  const keyOrder = getKeyOrderFromCache();
+  const orderedTranslations = {};
+
+  // First add keys in order
+  for (const key of keyOrder) {
+    if (translations[key] !== undefined) {
+      orderedTranslations[key] = translations[key];
+    }
+  }
+
+  // Then add any keys not in the order
+  for (const key of Object.keys(translations)) {
+    if (!keyOrder.includes(key)) {
+      orderedTranslations[key] = translations[key];
+    }
+  }
+
+  return orderedTranslations;
+}
+

@@ -60,6 +60,18 @@ export const translationApi = {
     return response.data;
   },
 
+  // Upload English translations (bulk import)
+  uploadEnglish: async (translations, overwrite = false) => {
+    const response = await api.post('/translations/upload', { translations, overwrite });
+    return response.data;
+  },
+
+  // Download translations for a language
+  downloadTranslations: async (lang) => {
+    const response = await api.get(`/translations/${lang}/download`);
+    return response.data;
+  },
+
   // Update a single translation
   updateTranslation: async (lang, key, value) => {
     const response = await api.put(`/translations/${lang}/${encodeURIComponent(key)}`, { value });
