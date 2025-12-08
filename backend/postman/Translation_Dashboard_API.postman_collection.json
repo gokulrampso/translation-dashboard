@@ -1,0 +1,494 @@
+{
+	"info": {
+		"_postman_id": "translation-dashboard-api",
+		"name": "Translation_Dashboard_API",
+		"description": "API collection for the Translation Dashboard System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/../health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"..",
+								"health"
+							]
+						},
+						"description": "Check server health and cache statistics"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Languages",
+			"item": [
+				{
+					"name": "Get Available Languages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/languages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"languages"
+							]
+						},
+						"description": "Get list of languages currently in cache"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supported Languages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/languages/supported",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"languages",
+								"supported"
+							]
+						},
+						"description": "Get all AWS Translate supported languages"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Language",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/languages/{{targetLanguage}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"languages",
+								"{{targetLanguage}}"
+							]
+						},
+						"description": "Delete a language (cannot delete English)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Translations",
+			"item": [
+				{
+					"name": "Get Translations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/{{language}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"{{language}}"
+							]
+						},
+						"description": "Get all translations for a language (reads from cache, includes key order)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Translation Key",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"Updated value here\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/translations/{{language}}/{{translationKey}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"{{language}}",
+								"{{translationKey}}"
+							]
+						},
+						"description": "Update a single translation key. Updates both DynamoDB and cache."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Translation Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"new_key\",\n  \"value\": \"New English value\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/translations/keys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"keys"
+							]
+						},
+						"description": "Add a new translation key to ALL languages. Automatically translates to non-English languages."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Translation Key",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/keys/{{translationKey}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"keys",
+								"{{translationKey}}"
+							]
+						},
+						"description": "Remove a translation key from ALL languages"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Key Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/keys/order",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"keys",
+								"order"
+							]
+						},
+						"description": "Get the current key order (for drag and drop reordering)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Key Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"order\": [\n    \"key1\",\n    \"key2\",\n    \"key3\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/translations/keys/order",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"keys",
+								"order"
+							]
+						},
+						"description": "Update the key order (drag and drop reordering). Order must be an array of keys."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload English JSON",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"translations\": {\n    \"welcome\": \"Welcome to our platform\",\n    \"hello\": \"Hello {{user.name}}\",\n    \"goodbye\": \"Goodbye\"\n  },\n  \"overwrite\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/translations/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"upload"
+							]
+						},
+						"description": "Bulk upload English translations as JSON key-value pairs. Automatically translates to all existing non-English languages. Set overwrite=true to overwrite existing keys."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Translations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/{{language}}/download",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"{{language}}",
+								"download"
+							]
+						},
+						"description": "Download translations for a language as JSON. Returns current state from cache/DynamoDB including any user-updated values. Only available for non-English languages."
+					},
+					"response": []
+				},
+				{
+					"name": "Re-translate Single Key",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/{{targetLanguage}}/{{translationKey}}/retranslate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"{{targetLanguage}}",
+								"{{translationKey}}",
+								"retranslate"
+							]
+						},
+						"description": "Re-translate a single key for a non-English language"
+					},
+					"response": []
+				},
+				{
+					"name": "Re-translate All Keys",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/translations/{{targetLanguage}}/retranslate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"{{targetLanguage}}",
+								"retranslate"
+							]
+						},
+						"description": "Re-translate all keys for a non-English language"
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Language",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"targetLang\": \"{{targetLanguage}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/translations/new",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"translations",
+								"new"
+							]
+						},
+						"description": "Create a new language by translating all English keys"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cache",
+			"item": [
+				{
+					"name": "Refresh Cache",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cache/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cache",
+								"refresh"
+							]
+						},
+						"description": "Reload all languages from DynamoDB into cache"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cache Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cache/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cache",
+								"status"
+							]
+						},
+						"description": "Get cache synchronization status including version and timestamps"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Usage & Cost",
+			"item": [
+				{
+					"name": "Get Usage Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/usage",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usage"
+							]
+						},
+						"description": "Get usage statistics for cost estimation (characters translated, API calls, estimated cost)"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Usage Statistics",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/usage/reset",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usage",
+								"reset"
+							]
+						},
+						"description": "Reset usage statistics (characters translated, API calls, cost)"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3001/api",
+			"type": "string"
+		},
+		{
+			"key": "language",
+			"value": "en",
+			"type": "string"
+		},
+		{
+			"key": "targetLanguage",
+			"value": "fr",
+			"type": "string"
+		},
+		{
+			"key": "translationKey",
+			"value": "welcome",
+			"type": "string"
+		}
+	]
+}
